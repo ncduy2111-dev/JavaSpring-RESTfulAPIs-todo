@@ -3,9 +3,14 @@ package vn.ncduy_dev.todo.Controller;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import vn.ncduy_dev.todo.Model.Todo;
@@ -19,11 +24,10 @@ public class TodoController {
         this.todoService = todoService;
     }
 
-    @GetMapping("/create")
-    public String create() {
-        Todo myTodo = new Todo("Learn Spring Boot", false);
+    @PostMapping("/todo")
+    public ResponseEntity<Todo> create(@RequestBody Todo myTodo) {
         this.todoService.handleCreateTodo(myTodo);
-        return "create ok";
+        return ResponseEntity.status(HttpStatus.CREATED).body(myTodo);
     }
 
     @GetMapping("/all-todos")
@@ -38,18 +42,16 @@ public class TodoController {
         return ResponseEntity.ok().body(this.todoService.getOneTodoByID(id));
     }
 
-    @GetMapping("/update")
-    public String updateTodo() {
-        Long id = 2L;
-        this.todoService.handleUpdateTodoById(id);
-        return "update ok";
+    @PutMapping("/todo/{id}")
+    public ResponseEntity<String> updateTodo(@PathVariable Long id, @RequestBody Todo updateTodo) {
+        this.todoService.handleUpdateTodoById(id, updateTodo);
+        return ResponseEntity.ok().body("update ok");
     }
 
-    @GetMapping("/delete")
-    public String deleteTodo() {
-        Long id = 2L;
+    @DeleteMapping("/todo/{id}")
+    public ResponseEntity<String> deleteTodo(@PathVariable Long id) {
         this.todoService.handleDeleteTodoById(id);
-        return "update ok";
+        return ResponseEntity.ok().body("delete id = " + id);
     }
 
 }

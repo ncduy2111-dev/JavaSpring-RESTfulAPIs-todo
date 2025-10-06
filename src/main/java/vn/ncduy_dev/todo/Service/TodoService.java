@@ -28,12 +28,12 @@ public class TodoService {
         return this.todoRepository.findById(id);
     }
 
-    public void handleUpdateTodoById(Long id) {
+    public void handleUpdateTodoById(Long id, Todo updateTodo) {
         Optional<Todo> optionalTodo = this.todoRepository.findById(id);
         if (optionalTodo.isPresent()) {
             Todo currentTodo = optionalTodo.get();
-            currentTodo.setComplete(true);
-            currentTodo.setName("update name");
+            currentTodo.setComplete(updateTodo.isComplete());
+            currentTodo.setName(updateTodo.getName());
 
             this.todoRepository.save(currentTodo);
         }
@@ -42,7 +42,7 @@ public class TodoService {
     public void handleDeleteTodoById(Long id) {
         Optional<Todo> optionalTodo = this.todoRepository.findById(id);
         if (optionalTodo.isPresent()) {
-            this.todoRepository.save(optionalTodo.get());
+            this.todoRepository.delete(optionalTodo.get());
         }
     }
 
