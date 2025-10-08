@@ -1,4 +1,4 @@
-package vn.ncduy_dev.todo.Model;
+package vn.ncduy_dev.todo.Entity;
 
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;

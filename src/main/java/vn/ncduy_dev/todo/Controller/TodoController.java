@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import vn.ncduy_dev.todo.Model.Todo;
+import vn.ncduy_dev.todo.Entity.Todo;
 import vn.ncduy_dev.todo.Service.TodoService;
 
 @RestController

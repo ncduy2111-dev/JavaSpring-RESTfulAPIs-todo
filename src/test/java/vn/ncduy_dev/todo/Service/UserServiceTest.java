@@ -17,8 +17,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import vn.ncduy_dev.todo.Model.User;
+import vn.ncduy_dev.todo.Entity.User;
 import vn.ncduy_dev.todo.Repository.UserRepository;
+import vn.ncduy_dev.todo.Service.impl.UserServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
@@ -27,7 +28,7 @@ public class UserServiceTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private UserService userService;
+    private UserServiceImpl userService;
 
     @Test
     public void createUser_shouldReturnUser_WhenEmailValid() {

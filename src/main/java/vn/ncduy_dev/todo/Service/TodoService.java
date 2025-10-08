@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import vn.ncduy_dev.todo.Model.Todo;
+import vn.ncduy_dev.todo.Entity.Todo;
 import vn.ncduy_dev.todo.Repository.TodoRepository;
 
 @Service

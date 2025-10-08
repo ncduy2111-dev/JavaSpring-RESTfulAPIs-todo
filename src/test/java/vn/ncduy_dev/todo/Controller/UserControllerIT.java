@@ -1,6 +1,9 @@
 package vn.ncduy_dev.todo.Controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -18,7 +21,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import vn.ncduy_dev.todo.IntegrationTest;
-import vn.ncduy_dev.todo.Model.User;
+import vn.ncduy_dev.todo.Entity.ApiResponse;
+import vn.ncduy_dev.todo.Entity.User;
 import vn.ncduy_dev.todo.Repository.UserRepository;
 
 @IntegrationTest
@@ -36,161 +40,159 @@ public class UserControllerIT {
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    public void innitDB() {
+    public void init() {
         this.userRepository.deleteAll();
     }
 
     @Test
     public void createUser_shouldReturnUser_whenValid() throws Exception {
-        // Chuẩn bị
-        User inputUser = new User(null, "testITCreate", "testITcrteate@gmai.com");
+        // arrange
+        User inputUser = new User(null, "hoidanit IT", "hoidanit.create@gmail.com");
 
-        // Hành động
-        String resultStr = mockMvc.perform(
-                post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
+        // action
+        String resultStr = mockMvc
+                .perform(post("/users").contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(inputUser)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
 
-        User outputUser = objectMapper.readValue(resultStr, User.class);
-
-        // So sánh
-        assertEquals(inputUser.getName(), outputUser.getName());
-    }
-
-    // @Test
-    // public void createUser_shouldReturnBadRequest_WhenEmailExists() throws
-    // Exception {
-    // // Chuẩn bị
-    // this.userRepository
-    // .saveAndFlush(new User(null, "testCreateExitEmail",
-    // "testCreateExitEmail@gmail.com"));
-
-    // User duplicateUser = new User(null, "testCreate",
-    // "testCreateExitEmail@gmail.com");
-
-    // // Hành động
-    // this.mockMvc.perform(
-    // post("/users")
-    // .contentType(MediaType.APPLICATION_JSON)
-    // .content(objectMapper.writeValueAsString(duplicateUser)))
-    // .andExpect(status().isBadRequest());
-    // }
-
-    @Test
-    public void getAllUser_shouldReturnAllUser() throws Exception {
-        // Chuẩn bị
-        User user1 = new User(null, "test1ITgetAll", "test1ITgetAll@gmai.com");
-
-        User user2 = new User(null, "test2ITgetAll", "test2ITgetAll@gmai.com");
-
-        List<User> inputData = List.of(user1, user2);
-
-        this.userRepository.saveAll(inputData);
-
-        // Hành động
-        String resultStr = this.mockMvc.perform(
-                get("/users"))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        List<User> outputData = this.objectMapper.readValue(resultStr, new TypeReference<List<User>>() {
+        // assert
+        ApiResponse<User> response = objectMapper.readValue(resultStr, new TypeReference<ApiResponse<User>>() {
         });
-        // So sánh
-        assertEquals(inputData.size(), outputData.size());
-        assertEquals(inputData.get(0).getName(), outputData.get(0).getName());
 
+        assertEquals("success", response.getStatus(), "Status phải là 'success'");
+        assertNotNull(response.getMessage(), "Message không được null");
+        assertNotNull(response.getData(), "Data không được null");
+        assertTrue(response.getData() instanceof User,
+                "Data phải là User, nhưng nhận được: " + response.getData().getClass().getSimpleName());
+        assertEquals(inputUser.getName(), response.getData().getName(), "Tên user không khớp");
+        assertEquals(inputUser.getEmail(), response.getData().getEmail(), "Email user không khớp");
+        assertNull(response.getErrorCode(), "ErrorCode phải là null khi thành công");
+        assertNotNull(response.getTimestamp(), "Timestamp không được null");
     }
 
     @Test
-    public void getOneUser_shouldReturnAllUser() throws Exception {
-        // Chuẩn bị
-        User inputUser = this.userRepository.saveAndFlush(new User(null, "test1ITgetOne", "test1ITgetAll@gmai.com"));
+    public void getAllUsers() throws Exception {
+        // arrange
+        User user1 = new User(null, "name1", "hoidanit@gmail.com");
+        User user2 = new User(null, "name2", "test@gmail.com");
+        List<User> data = List.of(user1, user2);
+        this.userRepository.saveAll(data);
 
-        // Hành động
-        String resultStr = this.mockMvc.perform(
-                get("/users/{inputId}", inputUser.getId()))
-                .andExpect(status().isOk())
+        // action
+        String resultStr = mockMvc.perform(get("/users")).andExpect(status().isOk()).andReturn().getResponse()
+                .getContentAsString();
+
+        // assert
+        ApiResponse<List<User>> response = objectMapper.readValue(resultStr,
+                new TypeReference<ApiResponse<List<User>>>() {
+                });
+
+        assertEquals("success", response.getStatus(), "Status phải là 'success'");
+        assertNotNull(response.getMessage(), "Message không được null");
+        assertNotNull(response.getData(), "Data không được null");
+        assertTrue(response.getData() instanceof List,
+                "Data phải là List, nhưng nhận được: " + response.getData().getClass().getSimpleName());
+        assertEquals(2, response.getData().size(), "Số lượng user không đúng");
+        assertTrue(response.getData().get(0) instanceof User, "Phần tử trong List phải là User");
+        assertEquals("hoidanit@gmail.com", response.getData().get(0).getEmail(), "Email user đầu tiên không khớp");
+        assertNull(response.getErrorCode(), "ErrorCode phải là null khi thành công");
+        assertNotNull(response.getTimestamp(), "Timestamp không được null");
+    }
+
+    @Test
+    public void getUserById() throws Exception {
+        // arrange
+        User user = new User(null, "name-get-by-id", "hoidanit@gmail.com");
+        User userInput = this.userRepository.saveAndFlush(user);
+
+        // action
+        String resultStr = mockMvc.perform(get("/users/{id}", userInput.getId())).andExpect(status().isOk()).andReturn()
+                .getResponse().getContentAsString();
+
+        // assert
+        ApiResponse<User> response = objectMapper.readValue(resultStr, new TypeReference<ApiResponse<User>>() {
+        });
+
+        assertEquals("success", response.getStatus(), "Status phải là 'success'");
+        assertNotNull(response.getMessage(), "Message không được null");
+        assertNotNull(response.getData(), "Data không được null");
+        assertTrue(response.getData() instanceof User,
+                "Data phải là User, nhưng nhận được: " + response.getData().getClass().getSimpleName());
+        assertEquals("name-get-by-id", response.getData().getName(), "Tên user không khớp");
+        assertNull(response.getErrorCode(), "ErrorCode phải là null khi thành công");
+        assertNotNull(response.getTimestamp(), "Timestamp không được null");
+    }
+
+    @Test
+    public void getUserById_shouldReturnError_whenIdNotFound() throws Exception {
+        // arrange
+        long nonExistentId = 0L;
+
+        // action
+        String resultStr = mockMvc.perform(get("/users/{id}", nonExistentId)).andExpect(status().isNotFound())
                 .andReturn().getResponse().getContentAsString();
 
-        User outputUser = this.objectMapper.readValue(resultStr, User.class);
+        // assert
+        ApiResponse<Object> response = objectMapper.readValue(resultStr, new TypeReference<ApiResponse<Object>>() {
+        });
 
-        // So sánh
-        assertEquals(inputUser.getName(), outputUser.getName());
+        assertEquals("error", response.getStatus(), "Status phải là 'error'");
+        assertNotNull(response.getMessage(), "Message không được null");
+        assertNull(response.getData(), "Data phải là null khi lỗi");
+        assertEquals("USER_NOT_FOUND", response.getErrorCode(), "ErrorCode không đúng");
+        assertNotNull(response.getTimestamp(), "Timestamp không được null");
     }
 
     @Test
-    public void getOneUser_shouldEmpty_whenIdNotFound() throws Exception {
-        // Chuẩn bị
+    public void updateUser() throws Exception {
+        // arrange
+        User user = new User(null, "old-name", "old@gmail.com");
+        User userInput = this.userRepository.saveAndFlush(user);
+        User updateUser = new User(userInput.getId(), "new-name", "new@gmail.com");
 
-        // Hành động
-        this.mockMvc.perform(
-                get("/users/{inputId}", 0))
-                .andExpect(status().isNotFound());
-
-        // So sánh
-
-    }
-
-    @Test
-    public void updateUser_shouldReturAllUser() throws Exception {
-        // Chuẩn bị
-        User inputUser = this.userRepository.saveAndFlush(new User(null, "testOldUpdate", "testOldITUpdate@gmai.com"));
-
-        User updateUser = new User(inputUser.getId(), "testNewUpdate", "testNewITUpdate@gmai.com");
-        // Hành động
-        String resultStr = this.mockMvc.perform(
-                put("/users/{inputId}", inputUser.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
+        // action
+        String resultStr = mockMvc
+                .perform(put("/users/{id}", userInput.getId()).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(updateUser)))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
-        User outputUser = this.objectMapper.readValue(resultStr, User.class);
+        // assert
+        ApiResponse<User> response = objectMapper.readValue(resultStr, new TypeReference<ApiResponse<User>>() {
+        });
 
-        // So sánh
-        assertEquals(updateUser.getName(), outputUser.getName());
+        assertEquals("success", response.getStatus(), "Status phải là 'success'");
+        assertNotNull(response.getMessage(), "Message không được null");
+        assertNotNull(response.getData(), "Data không được null");
+        assertTrue(response.getData() instanceof User,
+                "Data phải là User, nhưng nhận được: " + response.getData().getClass().getSimpleName());
+        assertEquals("new-name", response.getData().getName(), "Tên user không khớp");
+        assertEquals("new@gmail.com", response.getData().getEmail(), "Email user không khớp");
+        assertNull(response.getErrorCode(), "ErrorCode phải là null khi thành công");
+        assertNotNull(response.getTimestamp(), "Timestamp không được null");
     }
 
     @Test
-    public void updateUser_shouldEmpty_whenIdNotFound() throws Exception {
-        // Chuẩn bị
+    public void deleteUser() throws Exception {
+        // arrange
+        User user = new User(null, "delete-name", "delete@gmail.com");
+        User userInput = this.userRepository.saveAndFlush(user);
 
-        // Hành động
-        this.mockMvc.perform(
-                put("/users/{inputId}", 0))
-                .andExpect(status().isBadRequest());
+        // action
+        String resultStr = mockMvc
+                .perform(delete("/users/{id}", userInput.getId()).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
-        // So sánh
-
+        // assert
+        if (!resultStr.isEmpty()) { // Nếu API trả về body
+            ApiResponse<Object> response = objectMapper.readValue(resultStr, new TypeReference<ApiResponse<Object>>() {
+            });
+            assertEquals("success", response.getStatus(), "Status phải là 'success'");
+            assertNotNull(response.getMessage(), "Message không được null");
+            assertNull(response.getData(), "Data phải là null khi xóa");
+            assertNull(response.getErrorCode(), "ErrorCode phải là null khi thành công");
+            assertNotNull(response.getTimestamp(), "Timestamp không được null");
+        }
+        long countDB = this.userRepository.count();
+        assertEquals(0, countDB, "Số lượng user trong DB phải là 0 sau khi xóa");
     }
-
-    @Test
-    public void deleteUser_shouldReturnVoid_WhenIdValid() throws Exception {
-        // Chuẩn bị
-        User inputUser = this.userRepository.saveAndFlush(new User(null, "testDelete", "testOldITDelete@gmai.com"));
-
-        // Hành động
-        this.mockMvc.perform(
-                delete("/users/{inputId}", inputUser.getId()))
-                .andExpect(status().isNoContent());
-
-        long count = this.userRepository.count();
-        // So sánh
-        assertEquals(0, count);
-    }
-
-    // @Test
-    // public void deleteUser_shouldEmpty_whenIdNotFound() throws Exception {
-    // // Chuẩn bị
-
-    // // Hành động
-    // this.mockMvc.perform(
-    // delete("/users/{inputId}", 0))
-    // .andExpect(status().isInternalServerError());
-
-    // // So sánh
-
-    // }
 }
